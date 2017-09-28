@@ -10,7 +10,7 @@ unset PATH # avoid accidental use of $PATH
 #---- instalation directories -----------------
 
 install_dir=/usr/bin/; # BaCup main script directory
-base_dir=/etc/bacup.d/; # BaCup source scripts directory
+base_dir=/etc/bacup.d/; # BaCup source scripts directory, can be changed by the install script
 
 #---- system commands used by this script -----
 
@@ -45,22 +45,24 @@ TRUE=/bin/true;
 UMOUNT=/bin/umount;
 
 #---- file locations --------------------------
-
-comp_comum=10.51.1.17://comum/nmi/basegeo/; # Config files machine
-bkp_serv=10.51.1.168; # Backup Server
-bkp_serv_files=${bkp_serv}://BaseGeo/; # Backup Server
-bkp_serv_app_so=${bkp_serv}://GeoServer/; # Geoserver Operational System Backup volume
-bkp_serv_shr_so=${bkp_serv}://GeoDados/; # GeoDados Operational System Backup volume
-shr_serv=//10.51.1.211/Geodados_OS; # Share server OS share
-shr_serv_dir=/GeoDados_OS_mount; # Share server OS mount point
-source_so=/; # Geoserver Source Operational System
+# these are the paths that the scripts will use
+# changes are to be made here
+# in the future there must have some sort of solution for configuring 
+shr_serv=<File Share Server IP>://<File Share Server path>/; # File Share Server path for config files copy
+bkp_serv=<Backup Server IP>; # Backup Server
+bkp_serv_files=${bkp_serv}://<backup server mount path>/; # Backup Server
+bkp_serv_app_so=${bkp_serv}://<app server mount path/; # App Server Operational System Backup volume
+bkp_serv_shr_so=${bkp_serv}://<data server mount path>/; # Data Server Operational System Backup volume
+app_serv=//<App Server IP>/<App Server OS share>; # Share server OS share
+data_serv_dir=/<Data Server OS mount path>; # Data Server OS mount path
+app_serv_so=/; # App Server Operational System
 applog_dir=${base_dir}log/; # BaCup primary logs directory
-source_dir=/BaseGeo/; # Share source directory
-app_filedev_dir=${source_dir}aplicativos # App development files dir
-svn_repo=${source_dir}svn; # Svn source repository
-file_dir=${source_dir}arquivos/; # File directory
+data_dir=/Data Share and mount point/; # Data Share source directory
+app_filedev_dir=${data_dir}aplicativos # App development files dir
+svn_repo=${data_dir}svn; # Svn source repository
+file_dir=${data_dir}files/; # File directory
 trash_dir=${file_dir}.Trash-1000/; # Trash directory
-config_dir=${source_dir}config/; # Config directory
+config_dir=${data_dir}config/; # Config directory
 config_files_dir=${config_dir}conf_files/; # Config directory 
 config_files_bkp_dir=${config_files_dir}168_bkp/; # Config directory
 config_trash_dir=${config_dir}.Trash-1000/; # Trash directory
@@ -71,20 +73,21 @@ svn_dump_dir=${configbkp_dir}svndump/; # Svn dump directory
 #---- command options --------------------------
 
 # Credentials
-cmn_usr="geoadmin";
+cmn_usr="<user>";
 sper_usr="root";
-passwd="142536";
+passwd="<password>";
+domain="<domain>";
 
 # Sync options
-cmm_psw="-p $passwd";
-cmm_excl="-rptLz --delete --delete-excluded --exclude=copia_arquivos*  --exclude=windows_utilities";
+shr_psw="-p $passwd";
+shr_excl="-rptLz --delete --delete-excluded --exclude=copia_arquivos*  --exclude=windows_utilities";
 chk="-ni";
 mir_opt="-azHAXSPhx --delete --exclude=lost+found --numeric-ids";
 os_opt="--exclude=/etc/fstab";
-cmn_opt="-e ssh";
+ssh_opt="-e ssh";
 
 # Mount options
-mnt_opt="-t cifs -o username=geoadmin,domain=GEODADOS,password=142536,uid=geoadmin";
+mnt_opt="-t cifs -o username=${cmn_usr},domain=${domain},password=${passwd},uid=${cmn_usr}";
 
 # Copy diretories options
 scp_opt="-R"; # Simple copy option
