@@ -52,20 +52,23 @@ these are the paths that the scripts will use
 changes are to be made here
 in the future there must have some sort of solution for configuring 
 END
-serv_ip=(10.51.1.168 10.51.1.17 10.51.1.211);
-dest[0]=${serv_ip[0]}://BaseGeo/; # Backup Server data volume
-dest[1]=${serv_ip[1]}://comum/nmi/basegeo/; # File Share Server path for config files copy
-dest[2]=${serv_ip[0]}://GeoDados/; # Data Server Operational System Backup volume
-dest[3]=${serv_ip[0]}://GeoServer/; # App Server Operational System Backup volume
-device[0]=//${serv_ip[2]}/Geodados_OS; # Data Server OS share
+serv_ip=(192.168.0.21 192.168.0.25 192.168.0.11);
+vol_name=(Backup FileShare GeoData GeoApp);
+vol_type=(Server Share ServerOS);
+serv_name=(${vol_name[0]}${vol_type[0]} ${vol_name[1]}${vol_type[0]} ${vol_name[2]}${vol_type[0]});
+dest[0]=${serv_ip[0]}://${vol_name[2]}${vol_type[1]}/; # Backup Server data volume
+dest[1]=${serv_ip[1]}://${vol_name[1]}/${vol_name[2]}ConfCopy/; # File Share Server path for config files copy
+dest[2]=${serv_ip[0]}://${vol_name[2]}${vol_type[2]}/; # Data Server Operational System Backup volume
+dest[3]=${serv_ip[0]}://${vol_name[3]}${vol_type[2]}/; # App Server Operational System Backup volume
+device[0]=//${serv_ip[2]}/${vol_name[2]}${vol_type[2]}; # Data Server OS share
 applog_dir=${base_dir}log/; # BaCup primary logs directory
-source[0]=/BaseGeo/; # Data Share source directory
+source[0]=/${vol_name[2]}${vol_type[1]}/; # Data Share source directory
 source[1]=${source[0]}config/; # Config directory
-source[2]=/GeoDados_OS_mount; # Data Server OS mount point
+source[2]=/${vol_name[2]}${vol_type[2]}; # Data Server OS mount point
 source[3]=/; # App Source Operational System
-app_filedev_dir=${source[0]}aplicativos # App development files directory
+app_filedev_dir=${source[0]}devel # App development files directory
 svn_repo=${source[0]}svn; # Svn source repository
-datageo_dir=${source[0]}arquivos/; # Geo data directory
+datageo_dir=${source[0]}files/; # Geo data directory
 config_files_dir=${source[1]}conf_files/; # Config directory 
 config_files_bkp_dir=${config_files_dir}168_bkp/; # Config directory
 config_trash_dir=${source[1]}.Trash-1000/; # Trash directory
@@ -84,7 +87,7 @@ std_log="${applog_dir}${day}_BaCup_stdout.log"; # Standard output log
 test_std_log="${applog_dir}${day}_BaCup_stdout_test.log"; # Standard output log
 error_log="${applog_dir}${day}_BaCup_stderr.log"; # Error output log
 test_error_log="${applog_dir}${day}_BaCup_stderr_test.log"; # Error output log
-hd_copia="${configbkp_dir}copia_arquivos."; # 24 hours old file directory tree snapshot
+hd_copia="${configbkp_dir}files_copy."; # 24 hours old file directory tree snapshot
 copia_24="${hd_copia}24"; # 24 hours old file directory tree snapshot
 copia_48="${hd_copia}48"; # 48 hours old file directory tree snapshot
 data_fstab="${config_files_bkp_dir}geodadosbkp_fstab"; # Share server fstab for backup server in emergency mode
@@ -95,9 +98,9 @@ trash_dir="*.Trash-*"; # Trash directory
 
 # Credentials
 user[0]="root";
-user[1000]="geoadmin";
-passwd="142536";
-domain="GEODADOS";
+user[1000]="adminuser";
+passwd="password";
+domain="WORKGROUP";
 
 # Sync options
 cmm_psw="-p $passwd";
