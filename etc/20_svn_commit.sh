@@ -29,9 +29,9 @@ wrto_log () {
 {
    cmd_line="$SVN status | $GREP '\?' |awk '{$PRINT $2}'| $XARGS $SVN add";
    $SVN status | $GREP '\?' |awk '{$PRINT $2}'| $XARGS $SVN add
-   cmd_line="$SVN commit $config_dir -m 'Atualização automática por backup'";
+   cmd_line="$SVN commit ${source[1]} -m 'Atualização automática por backup'";
    $SVN commit $app_filedev_dir -m "Atualização automática por backup";
-   cmd_line="$SVNADMIN dump $svn_repo > $svn_dump";
+   cmd_line="$SVNADMIN dump ${svn_repo} > ${svn_dump}";
    $SVNADMIN dump $svn_repo > $svn_dump
 } && wrto_log || error_log;
 

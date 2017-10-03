@@ -10,11 +10,12 @@ unset PATH # avoid accidental use of $PATH
 #---- instalation directories -----------------
 
 install_dir=/usr/bin/; # BaCup main script directory
-base_dir=/etc/bacup.d/; # BaCup source scripts directory, can be changed by the install script
+base_dir=/etc/bacup.d/; # BaCup source scripts directory
 
 #---- system commands used by this script -----
 
 # Commands in /usr/bin
+AWK=/usr/bin/awk;
 DIFF=/usr/bin/diff;
 FIND=/usr/bin/find;
 ID=/usr/bin/id;
@@ -46,27 +47,29 @@ TRUE=/bin/true;
 UMOUNT=/bin/umount;
 
 #---- file locations --------------------------
-# these are the paths that the scripts will use
-# changes are to be made here
-# in the future there must have some sort of solution for configuring 
-shr_serv=<File Share Server IP>://<File Share Server path>/; # File Share Server path for config files copy
-bkp_serv=<Backup Server IP>; # Backup Server
-bkp_serv_files=${bkp_serv}://<backup server data mount path>/; # Backup Server data volume
-bkp_serv_app_so=${bkp_serv}://<app server mount path/; # App Server Operational System Backup volume
-bkp_serv_shr_so=${bkp_serv}://<data server mount path>/; # Data Server Operational System Backup volume
-data_serv=//<Data Server IP>/<Data Server OS share>; # Data Server OS share
-data_serv_dir=/<Data Server OS mount path>; # Data Server OS mount path
-app_serv_so=/; # App Server Operational System
+: <<'END'
+these are the paths that the scripts will use
+changes are to be made here
+in the future there must have some sort of solution for configuring 
+END
+serv_ip=(10.51.1.168 10.51.1.17 10.51.1.211);
+dest[0]=${serv_ip[0]}://BaseGeo/; # Backup Server data volume
+dest[1]=${serv_ip[1]}://comum/nmi/basegeo/; # File Share Server path for config files copy
+dest[2]=${serv_ip[0]}://GeoDados/; # Data Server Operational System Backup volume
+dest[3]=${serv_ip[0]}://GeoServer/; # App Server Operational System Backup volume
+device[0]=//${serv_ip[2]}/Geodados_OS; # Data Server OS share
 applog_dir=${base_dir}log/; # BaCup primary logs directory
-data_dir=/Data Share and mount point/; # Data Share source directory
-app_filedev_dir=${data_dir}<devel dir> # App development files directory
-svn_repo=${data_dir}<svn repo dir>; # Svn source repository
-file_dir=${data_dir}<files dir>/; # File directory
-config_dir=${data_dir}config/; # Config directory
-config_files_dir=${config_dir}conf_files/; # Config directory 
+source[0]=/BaseGeo/; # Data Share source directory
+source[1]=${source[0]}config/; # Config directory
+source[2]=/GeoDados_OS_mount; # Data Server OS mount point
+source[3]=/; # App Source Operational System
+app_filedev_dir=${source[0]}aplicativos # App development files directory
+svn_repo=${source[0]}svn; # Svn source repository
+datageo_dir=${source[0]}arquivos/; # Geo data directory
+config_files_dir=${source[1]}conf_files/; # Config directory 
 config_files_bkp_dir=${config_files_dir}168_bkp/; # Config directory
-config_trash_dir=${config_dir}.Trash-1000/; # Trash directory
-configbkp_dir=${config_dir}backup.d/; # Config backup directory
+config_trash_dir=${source[1]}.Trash-1000/; # Trash directory
+configbkp_dir=${source[1]}backup.d/; # Config backup directory
 configlog_dir=${configbkp_dir}BaCup_log; # Config BaCup log directory
 svn_dump_dir=${configbkp_dir}svndump/; # Svn dump directory
 
@@ -81,30 +84,31 @@ std_log="${applog_dir}${day}_BaCup_stdout.log"; # Standard output log
 test_std_log="${applog_dir}${day}_BaCup_stdout_test.log"; # Standard output log
 error_log="${applog_dir}${day}_BaCup_stderr.log"; # Error output log
 test_error_log="${applog_dir}${day}_BaCup_stderr_test.log"; # Error output log
-copia_24="${configbkp_dir}copia_arquivos.24"; # 24 hours old file directory tree snapshot
-copia_48="${configbkp_dir}copia_arquivos.48"; # 48 hours old file directory tree snapshot
-shr_fstab="${config_files_bkp_dir}geodadosbkp_fstab"; # Share server fstab for backup server in emergency mode
+hd_copia="${configbkp_dir}copia_arquivos."; # 24 hours old file directory tree snapshot
+copia_24="${hd_copia}24"; # 24 hours old file directory tree snapshot
+copia_48="${hd_copia}48"; # 48 hours old file directory tree snapshot
+data_fstab="${config_files_bkp_dir}geodadosbkp_fstab"; # Share server fstab for backup server in emergency mode
 app_fstab="${config_files_bkp_dir}geoserverbkp_fstab"; # App server fstab for backup server in emergency mode
 trash_dir="*.Trash-*"; # Trash directory
 
 #---- command options --------------------------
 
 # Credentials
-cmn_usr="<user>";
-sper_usr="root";
-passwd="<password>";
-domain="<domain>";
+user[0]="root";
+user[1000]="geoadmin";
+passwd="142536";
+domain="GEODADOS";
 
 # Sync options
-shr_psw="-p $passwd";
-shr_excl="-rptLz --delete --delete-excluded --exclude=${hd_copia}*  --exclude=windows_utilities";
+cmm_psw="-p $passwd";
 chk="-ni";
-mir_opt="-azHAXSPhx --delete --exclude=lost+found --numeric-ids";
 os_opt="--exclude=/etc/fstab";
-ssh_opt="-e ssh";
+cmn_sync_opt="-e ssh";
+sync_opt[0]="-azHAXSPhx --delete --exclude=lost+found --numeric-ids ${cmn_sync_opt}";
+sync_opt[1]="-rptLz --delete --delete-excluded --exclude=${hd_copia}*  --exclude=windows_utilities ${cmn_sync_opt}";
 
 # Mount options
-mnt_opt="-t cifs -o username=${cmn_usr},domain=${domain},password=${passwd},uid=${cmn_usr}";
+mnt_opt="-t cifs -o username=${user[1000]},domain=${domain},password=${passwd},uid=${user[1000]}";
 
 # Copy diretories options
 scp_opt="-R"; # Simple copy option
@@ -113,3 +117,14 @@ diff_opt="-r --unidirectional-new-file"; # Differ directory options: -r recursiv
 
 # SSH fake terminal option to poweroff
 ssh_opt="-tt";
+
+#---- arrays -----------------------------------
+
+copydir[0]="${file_dir}" "${copia_24}" "${copia_48}";
+
+comb[0]="${sync_opt[0]} ${source[0]} ${user[1000]}@${dest[0]}";
+comb[1]="${sync_opt[1]} ${source[1]} ${user[1000]}@${dest[1]}";
+comb[2]="${sync_opt[0]} ${source[2]} ${user[0]}@${dest[2]}";
+comb[3]="${sync_opt[0]} ${source[3]} ${user[0]}@${dest[3]}";
+
+devmount[0]="${device[0]} ${source[2]}";

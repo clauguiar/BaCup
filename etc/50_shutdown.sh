@@ -44,7 +44,7 @@ prepare_log () {
 	logging;
 }
 perform_shutdown () {
-	$SSHPASS $cmm_psw $SSH $ssh_opt $sper_usr@$bkp_serv 'shutdown -h now';
+	$SSHPASS ${cmm_psw} $SSH ${ssh_opt} ${user[1000]}@${bkp_serv} 'shutdown -h now';
 	$SLEEP 5;
 	c=1 && p=0;
 	test_ping;

@@ -18,9 +18,13 @@ cmd_name="Empty trash";
 #---- log function -----------------------------
 
 logging () {
-	${base_dir}05_logging.sh "$d" "$cmd_name" && exit ${d};
+	${base_dir}05_logging.sh "$d" "$cmd_name" && unset c && exit ${d};
 	}
-	
+
+#---- incomming variables ----------------------
+
+unset c;
+
 #---- command functions ------------------------
 : <<'END'
 	Desired state = empty
@@ -41,7 +45,7 @@ prepare_log () {
 	logging;
 }
 test_trash () {
-	nonempty_trash="$($FIND ${source_dir} -path *Trash-* -exec find {} -empty -prune -o -print \; 2> /dev/null)";
+	nonempty_trash="$($FIND ${source[0]} -path ${trash_dir} -exec find {} -empty -prune -o -print \; 2> /dev/null)";
 	if [ -n "$nonempty_trash" -a -z "$c" ] ; then 
 	empty_trash
 	else prepare_log
