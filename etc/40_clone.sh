@@ -11,96 +11,69 @@ unset PATH # avoid accidental use of $PATH
 
 source /etc/bacup.d/00_sources.sh
 
+#---- this script ------------------------------
+
+local this_scritp="${@:(-2):1}";
+
 #---- log function -----------------------------
 
 logging () {
-	${base_dir}05_logging.sh "$d" "$cmd_name" && exit ${d};
+	${base_dir}05_logging.sh "${d}" "${cmd_name}" && exit ${d};
 	}
 
 #---- command functions ------------------------
 : <<'END'
-	Desired state = unreachable
-	reachable + c = 0 => perform shutdown command! shutdown
-	d=0; unreachable + c = 1 => success! std_log
-	d=1; unreachable + c = 0 => already empty! not_needed_log
-	d!=0/1; reachable + c = 1 => could not empty! error_log
+	Desired state = final copy = source
+	Flux = call for the specific function; 
+	test if there would be difference once the sync is made;
+		if there would be difference, exec the sync
+	d=0 if the sync was made and there is no more difference;
+	d=1 if the sync was not made (because)and there is no difference;
+	d=40 if there is still difference (none of the above are met);
 END
 
-test_trash () {
-	nonempty_trash="$($FIND ${source_dir} -path *Trash-* -exec find {} -empty -prune -o -print \; 2> /dev/null)";
-	if [ -n "$nonempty_trash" -a -z "$c" ] ; then 
-	empty_trash
-	else prepare_log
-	fi
-}
 prepare_log () {
-	if [ -z $c ] ; then
-	d=1
-	elif [ -z "$nonempty_trash" ] ; then
-	d=0
-	else
+	if [ ! -z "$1" ] ; then
 	d=40
+	elif [ -z "$2" ] ; then
+	d=1
+	else
+	d=0
 	fi;
+	unset clone_res;
 	logging;
 }
-test_clone_config () {
-	cmd_line="$SSHPASS $cmm_psw $RSYNC $chk $cmn_opt $cmm_excl $config_dir $cmn_usr@$comp_comum";
-	$SSHPASS $cmm_psw $RSYNC $chk $cmn_opt $cmm_excl $config_dir $cmn_usr@$comp_comum && wrto_log || exec_copy_config;
-
+exec_clone () {
+	clone_res="$($SSHPASS ${cmm_psw} $RSYNC $1)";
 }
-exec_clone_config () {
-	cmd_line="$SSHPASS $cmm_psw $RSYNC $cmn_opt $cmm_excl $config_dir $cmn_usr@$comp_comum";
-	$SSHPASS $cmm_psw $RSYNC $cmn_opt $cmm_excl $config_dir $cmn_usr@$comp_comum && copy_config || error_log;
+test_clone () {
+	local test_clone_opt="${chk} $1";
+	exec_clone "${test_clone_opt}";
+	if [ ! -z "${clone_res}" ] ; then
+	exec_clone "$1";
+	local c=1;
+	fi;
+	exec_clone "${test_clone_opt}";
+	prepare_log "${clone_res}" "$c";
+	}
+set_variables () {
+	unset clone_res;
+	unset c;
+	local clone_fact="$1";
+	dest_dir="${local clone_fact#*@}";
+	local source_dir1="${local clone_fact% *}";
+	local source_dir="${source_dir1##* }";
+	cmd_name="Script= $this_script; Sync ${source_dir} to ${dest_dir}";
 }
-clone_srcdir () {
-	cmd_name="Clone base directory to Backup Server";
-	cmd_line="$SSHPASS $cmm_psw $RSYNC $mir_opt $cmn_opt $source_dir $cmn_usr@$bkp_serv_files";
-	$SSHPASS $cmm_psw $RSYNC $mir_opt $cmn_opt $source_dir $cmn_usr@$bkp_serv_files && wrto_log || error_log;
-	}
-clone_shr_so () {
-	cmd_name="Clone GeoDados Operating System to Backup Server /dev/sda3";
-	cmd_line="$SSHPASS $cmm_psw $RSYNC $mir_opt $cmn_opt $source_so $sper_usr@$bkp_serv_shr_so";
-	$MOUNT $mnt_opt $shr_serv $shr_serv_dir;
-	$SSHPASS $cmm_psw $RSYNC $mir_opt $cmn_opt $shr_serv_dir $sper_usr@$bkp_serv_shr_so && wrto_log || error_log;
-	$CP shr_fstab ${bkp_serv_shr_so}/etc/;
-	$UMOUNT $mnt_opt $shr_serv_dir;
-	}
-clone_app_so () {
-	cmd_name="Clone GeoServer Operating System to Backup Server /dev/sda3";
-	cmd_line="$SSHPASS $cmm_psw $RSYNC $mir_opt $cmn_opt $source_so $sper_usr@$bkp_serv_app_so";
-	{
-		$SSHPASS $cmm_psw $RSYNC $mir_opt $cmn_opt $source_so $sper_usr@$bkp_serv_app_so;
-		cmd_line="$CP app_fstab ${bkp_serv_app_so}/etc/";
-		$CP app_fstab ${bkp_serv_app_so}/etc/;
-	} && wrto_log || error_log
-	}
-pwroff_bkp_srv () {
-	cmd_name="Power off Backup Server";
-	cmd_line="$SSHPASS $cmm_psw $SSH $ssh_opt $sper_usr@$bkp_serv 'shutdown -h now'";
-	$SSHPASS $cmm_psw $SSH $ssh_opt $sper_usr@$bkp_serv 'shutdown -h now';
-	$SLEEP 5;
-	$PING $ping_opt $bkp_serv && error_log || wrto_log;
-	}
-engage () {
-	$DATE > $error_log; 
-	$DATE > $std_log;
-	{
-		$DATE >> $log_file;
-		${base_dir}10_empty_trash.sh;
-		${base_dir}20_commit_svn.sh;
-		${base_dir}30_copy.sh;
-		copy_srcdir;
-		clone_shr_so;
-		clone_app_so;
-		pwroff_bkp_srv
-		$ECHO >> $log_file;
-	} >> $std_log 2>> $error_log;
-	cp_log;
-	}
-
 #---- commands ---------------------------------
+
 
 # make sure we're running as root
 if (( `$ID -u` != 0 )); then { /bin/echo "Sorry, must be root.  Exiting..."; exit; } fi
-engage;
-exit;
+for i in "${clone_fact}"
+		do
+			:
+			set_variables "$i"; # incomming variables and command name
+			test_clone "$i";
+			$CP "${data_fstab}" "${dest_dir}"/etc/;
+		done
