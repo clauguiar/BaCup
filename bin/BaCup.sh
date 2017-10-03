@@ -34,7 +34,7 @@ prepare_log () {
 	logging;
 }
 engage () {
-	( $ECHO; $DATE; ) | tee -a $std_log $error_log $log_file; 
+	( $ECHO; $DATE; ) | $TEE -a $std_log $error_log $log_file; 
 	{
 		${base_dir}10_empty_trash.sh;
 		${base_dir}20_commit_svn.sh;
@@ -42,7 +42,7 @@ engage () {
 		${base_dir}40_clone.sh;
 		${base_dir}50_shutdown.sh;
 	} >> $std_log 2>> $error_log;
-	( $ECHO "Backup finalizado, encerrando BaCup"; $ECHO; ) | tee -a $std_log $error_log $log_file; 
+	( $ECHO "Backup finalizado, encerrando BaCup"; $ECHO; ) | $TEE -a $std_log $error_log $log_file; 
 	${base_dir}30_copy.sh ${applog_dir} ${configlog_dir};
 	}
 
