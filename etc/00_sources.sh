@@ -24,6 +24,7 @@ SSH=/usr/bin/ssh;
 SSHPASS=/usr/bin/sshpass;
 SVN=/usr/bin/svn;
 SVNADMIN=/usr/bin/svnadmin;
+TEE=/usr/bin/tee;
 TOUCH=/usr/bin/touch;
 XARGS=/usr/bin/xargs;
 
